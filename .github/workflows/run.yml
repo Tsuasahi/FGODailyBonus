@@ -26,7 +26,7 @@ jobs:
         sudo timedatectl set-timezone 'Asia/Shanghai'
     - name: Test
       run: |
-        pip install cryptography
+        apt install python3-cryptography
         python3 main.py
       env:
         userIds: ${{ secrets.GAME_USERIDS }}
