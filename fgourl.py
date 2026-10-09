@@ -140,6 +140,9 @@ def gameData():
     data = requests.get(
         f'{server_addr_}/gamedata/top?appVer={app_ver_}&dataVer={data_ver_}&dateVer={date_ver_}', verify=False
     ).json()
+    success = data['response'][0].get('success', {})
+    server_date_ver = success.get('dateVer', date_ver_)
+    server_data_ver = success.get('dataVer', data_ver_)
 
     if 'action' in data['response'][0]['fail'] and data['response'][0]['fail']['action'] == 'app_version_up':
         UpdateAppVer(data['response'][0]['fail']['detail'].replace('\r\n', ''))
@@ -147,19 +150,24 @@ def gameData():
         return
 
     if (
-        data['response'][0]['success']['dateVer'] != date_ver_
-        or data['response'][0]['success']['dataVer'] != data_ver_
+        server_date_ver != date_ver_
+        or server_data_ver != data_ver_
     ):
         s = '*Need update*\n'
         s += f'appVer: {app_ver_}\n'
-        s += f'dateVer: {date_ver_} Server: {data["response"][0]["success"]["dateVer"]}\n'
-        s += f'dataVer: {data_ver_} Server: {data["response"][0]["success"]["dataVer"]}'
+        s += f'dateVer: {date_ver_} Server: {server_date_ver}\n'
+        s += f'dataVer: {data_ver_} Server: {server_data_ver}'
 #        SendMessageToAdmin(s)
 
-        val = UpdateBundleFolder(data['response'][0]['success']['assetbundle'])
+        assetbundle = success.get('assetbundle')
+        if assetbundle is None:
+            SendMessageToAdmin('Update failed: missing assetbundle in gameData response')
+            return
+
+        val = UpdateBundleFolder(assetbundle)
         if val == 1:
-            data_ver_ = data['response'][0]['success']['dataVer']
-            date_ver_ = data['response'][0]['success']['dateVer']
+            data_ver_ = server_data_ver
+            date_ver_ = server_date_ver
             new_data = {}
             new_data['global'] = {
                 'appVer': app_ver_,
